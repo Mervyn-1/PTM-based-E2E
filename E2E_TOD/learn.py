@@ -14,7 +14,7 @@ from eval import MultiWozEvaluator
 def parse_config():
     parser = argparse.ArgumentParser()
     # dataset configuration
-    parser.add_argument('--data_path_prefix', type=str, help='The path where the data stores.')
+    parser.add_argument('--dataset_name', type=str, help='The name of the dataset', choices=['MultiWOZ_2.0', 'MultiWOZ_2.1', 'MultiWOZ_2.2'])
 
     parser.add_argument('--shuffle_mode', type=str, default='shuffle_session_level', 
         help="shuffle_session_level or shuffle_turn_level, it controls how we shuffle the training data.")
@@ -42,7 +42,18 @@ def parse_config():
     parser.add_argument("--gradient_accumulation_steps", type=int, default=2, help="gradient accumulation step.")
     parser.add_argument("--ckpt_save_path", type=str, help="directory to save the model parameters.")
     parser.add_argument("--only_use_PLM", action="store_true", help="only use PLM for fine-tuning")
-    return parser.parse_args()
+
+    # set data path according to dataset name
+    args = parser.parse_args()
+    if args.dataset_name == 'MultiWOZ_2.0':
+        args.data_path_prefix = '../../../../data/multiwoz/MultiWOZ_2.0'
+    elif args.dataset_name == 'MultiWOZ_2.1':
+        args.data_path_prefix = '../../../../data/multiwoz/MultiWOZ_2.1'
+
+    print(args.model_name)
+    print(args.dataset_name)
+
+    return args
 
 
 def get_optimizers(model, args):
