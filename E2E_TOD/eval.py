@@ -84,7 +84,7 @@ class MultiWozEvaluator(object):
         # only evaluate these slots for dialog success
         self.requestables = ['phone', 'address', 'postcode', 'reference', 'id']
         self.data_prefix = self.cfg.data_prefix
-        self.mapping_pair_path = self.data_prefix + '/mapping.pair'
+        self.mapping_pair_path = self.data_prefix + '/multi-woz/mapping.pair'
 
     def wrap_evaluation_result(self, result_list):
         field = ['dial_id', 'turn_num', 'user', 'bspn_gen', 'bsdx', 'resp_gen', 'resp', 'aspn_gen', 'aspn',

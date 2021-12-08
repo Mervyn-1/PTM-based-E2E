@@ -1,5 +1,4 @@
 import re
-import argparse
 def restore_text(text):
     text = re.sub('=', '', text)
     text = re.sub(' is ', ' ', text)
@@ -170,19 +169,10 @@ def process_data_list(data_list, tokenizer, special_token_list):
 if __name__ == '__main__':
     import json
     import os
+    os.mkdir(r'../data/multi-woz-fine-processed/')
+
     from config import Config
-
-    parser = argparse.ArgumentParser(description="Argument for preprocessing")
-    parser.add_argument("--version", type=str, default="2.0", choices=["2.0", "2.1", "2.2"])
-    args = parser.parse_args()
-
-    if args.version == '2.0':
-        data_prefix = './../MultiWOZ_2.0'
-    elif args.version == '2.1':
-        data_prefix = './../MultiWOZ_2.1'
-
-    if not os.path.exists(data_prefix + '/multi-woz-fine-processed/'):
-        os.mkdir(data_prefix + '/multi-woz-fine-processed/')
+    data_prefix = r'../data/'
     cfg = Config(data_prefix)
 
     model_path = 't5-small'
@@ -210,21 +200,21 @@ if __name__ == '__main__':
 
     print ('Start processing training data...')
     train_list = process_data_list(reader.train, tokenizer, special_token_list)
-    out_f = data_prefix + '/multi-woz-fine-processed/multiwoz-fine-processed-train.json'
+    out_f = r'../data/multi-woz-fine-processed/multiwoz-fine-processed-train.json'
     with open(out_f, 'w') as outfile:
         json.dump(train_list, outfile, indent=4)
     print ('Training data saved!')
 
     print ('Start processing dev data...')
     dev_list = process_data_list(reader.dev, tokenizer, special_token_list)
-    out_f = data_prefix + '/multi-woz-fine-processed/multiwoz-fine-processed-dev.json'
+    out_f = r'../data/multi-woz-fine-processed/multiwoz-fine-processed-dev.json'
     with open(out_f, 'w') as outfile:
         json.dump(dev_list, outfile, indent=4)
     print ('Dev data saved!')
 
     print ('Start processing test data...')
     test_list = process_data_list(reader.test, tokenizer, special_token_list)
-    out_f = data_prefix + '/multi-woz-fine-processed/multiwoz-fine-processed-test.json'
+    out_f = r'../data/multi-woz-fine-processed/multiwoz-fine-processed-test.json'
     with open(out_f, 'w') as outfile:
         json.dump(test_list, outfile, indent=4)
     print ('Test data saved!')
