@@ -10,8 +10,8 @@ class Config:
         self.vocab_path_train = self.data_prefix + '/multi-woz-processed/vocab'
         self.data_path = self.data_prefix + '/multi-woz-processed/'
         self.data_file = 'data_for_damd.json'
-        self.dev_list = self.data_prefix + '/valListFile.json'
-        self.test_list = self.data_prefix + '/testListFile.json'
+        self.dev_list = self.data_prefix + '/multi-woz/valListFile.json'
+        self.test_list = self.data_prefix + '/multi-woz/testListFile.json'
 
         self.dbs = {
             'attraction': self.data_prefix + '/db/attraction_db_processed.json',
