@@ -1,4 +1,4 @@
-wget https://github.com/xiami2019/MultiWOZ_Datasets/blob/main/MultiWOZ_2_1.zip
+wget https://github.com/xiami2019/MultiWOZ_Datasets/raw/main/MultiWOZ_2.1.zip
 unzip MultiWOZ_2_1.zip
 cd ./utils
 python data_analysis.py --version 2.1
