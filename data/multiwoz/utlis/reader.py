@@ -133,7 +133,7 @@ class MultiWozReader(_ReaderBase):
         self.data_mode = data_mode
         self.nlp = spacy.load('en_core_web_sm')
         self.cfg = cfg
-        print(self.cfg.dbs)
+
         self.db = MultiWozDB(self.cfg.dbs)
         self.vocab_size = self._build_vocab()
 
