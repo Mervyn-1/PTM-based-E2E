@@ -1,6 +1,6 @@
 import math, logging, copy, json
 from collections import Counter, OrderedDict
-from nltk.util import ngrams
+from nltk.util import Index, ngrams
 import ontology
 from clean_dataset import clean_slot_values
 
@@ -20,10 +20,17 @@ class BLEUScorer(object):
         c = 0
         weights = [0.25, 0.25, 0.25, 0.25]
 
+        single_turn_bleu = []
+
         # accumulate ngram statistics
         for hyps, refs in parallel_corpus:
             hyps = [hyp.split() for hyp in hyps]
             refs = [ref.split() for ref in refs]
+
+            count_single = [0, 0, 0, 0]
+            clip_count_single = [0, 0, 0, 0]
+            r_single = 0
+            c_single = 0
             for hyp in hyps:
 
                 for i in range(4):
@@ -31,6 +38,7 @@ class BLEUScorer(object):
                     hypcnts = Counter(ngrams(hyp, i + 1))
                     cnt = sum(hypcnts.values())
                     count[i] += cnt
+                    count_single[i] += cnt
 
                     # compute clipped counts
                     max_counts = {}
@@ -41,6 +49,7 @@ class BLEUScorer(object):
                     clipcnt = dict((ng, min(count, max_counts[ng])) \
                                    for ng, count in hypcnts.items())
                     clip_count[i] += sum(clipcnt.values())
+                    clip_count_single[i] += sum(clipcnt.values())
 
                 # accumulate r & c
                 bestmatch = [1000, 1000]
@@ -53,6 +62,23 @@ class BLEUScorer(object):
                 r += bestmatch[1]
                 c += len(hyp)
 
+                r_single += bestmatch[1]
+                c_single += len(hyp)
+
+            if c_single == 0:
+                single_turn_bleu.append(0)
+                continue
+
+            # 计算单轮BLEU
+            p0 = 1e-7
+            bp = 1 if c_single > r_single else math.exp(1 - float(r_single) / float(c_single))
+            p_ns = [float(clip_count_single[i]) / float(count_single[i] + p0) + p0 \
+            for i in range(4)]
+            s = math.fsum(w * math.log(p_n) \
+                    for w, p_n in zip(weights, p_ns) if p_n)
+            bleu = bp * math.exp(s)
+            single_turn_bleu.append(bleu * 100)
+
         # computing bleu score
         p0 = 1e-7
         bp = 1 if c > r else math.exp(1 - float(r) / float(c))
@@ -61,7 +87,7 @@ class BLEUScorer(object):
         s = math.fsum(w * math.log(p_n) \
                       for w, p_n in zip(weights, p_ns) if p_n)
         bleu = bp * math.exp(s)
-        return bleu * 100
+        return bleu * 100, single_turn_bleu
 
 
 class MultiWozEvaluator(object):
@@ -245,7 +271,15 @@ class MultiWozEvaluator(object):
         wrap_generated = [[_] for _ in gen]
         wrap_truth = [[_] for _ in truth]
         if gen and truth:
-            sc = self.bleu_scorer.score(zip(wrap_generated, wrap_truth))
+            sc, single_turn_bleu = self.bleu_scorer.score(zip(wrap_generated, wrap_truth))
+
+            assert len(data) == len(single_turn_bleu)
+
+            for i in range(len(data)):
+                if eval_dial_list and data[i]['dial_id'] +'.json' not in eval_dial_list:
+                    continue
+                data[i]['BLEU'] = single_turn_bleu[i]
+
         else:
             sc = 0.0
         return sc
@@ -549,6 +583,11 @@ class MultiWozEvaluator(object):
 
             successes += success
             matches += match
+
+            if dial:
+                dial[-1]['inform_rate'] = match * 100
+                dial[-1]['success_rate'] = success * 100
+
             dial_num += 1
 
             # for domain in gen_stats.keys():
