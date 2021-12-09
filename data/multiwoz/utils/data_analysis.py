@@ -161,7 +161,6 @@ if __name__ == '__main__':
         data_path = './../MultiWOZ_2.1'
     elif args.version == "2.2":
         data_path = 'MultiWOZ_2.2'
-        raise Exception('待实现')
 
     data_file = 'data.json'
     save_path = data_path + '/multi-woz-analysis/'
