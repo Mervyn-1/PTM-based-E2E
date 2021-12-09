@@ -7,6 +7,7 @@ from config21 import global_config as cfg
 from db_ops import MultiWozDB
 from clean_dataset import clean_slot_values, clean_text, my_clean_text
 
+
 def get_db_values(value_set_path): # value_set.json, all the domain[slot] values in datasets
     processed = {}
     bspn_word = []
@@ -75,10 +76,10 @@ def get_db_values(value_set_path): # value_set.json, all the domain[slot] values
 
     with open(value_set_path.replace('.json', '_processed.json'), 'w') as f:
         json.dump(processed, f, indent=2) # save processed.json
-    with open('data/multi-woz-2.2-processed/bspn_word_collection.json', 'w') as f:
+    with open('data/multi-woz-2.3-processed/bspn_word_collection.json', 'w') as f:
         json.dump(bspn_word, f, indent=2) # save bspn_word
 
-    print('2.2 DB value set processed! ')
+    print('2.3 DB value set processed! ')
 
 def preprocess_db(db_paths): # apply clean_slot_values to all dbs
     dbs = {}
@@ -100,23 +101,23 @@ def preprocess_db(db_paths): # apply clean_slot_values to all dbs
             json.dump(dbs[domain], f, indent=2)
         print('[%s] DB processed! '%domain)
 
-# 2.1
+# 2.3
 class DataPreprocessor(object):
     def __init__(self):
         self.nlp = spacy.load('en_core_web_sm')
         self.db = MultiWozDB(cfg.dbs) # load all processed dbs
         # data_path = 'data/multi-woz/annotated_user_da_with_span_full.json'
-        data_path = 'data/MultiWOZ_2.2/data.json'
+        data_path = 'data/MultiWOZ_2.3/data.json'
         archive = zipfile.ZipFile(data_path + '.zip', 'r')
         self.convlab_data = json.loads(archive.open(data_path.split('/')[-1], 'r').read().lower())
         # self.delex_sg_valdict_path = 'data/multi-woz-processed/delex_single_valdict.json'
         # self.delex_mt_valdict_path = 'data/multi-woz-processed/delex_multi_valdict.json'
         # self.ambiguous_val_path = 'data/multi-woz-processed/ambiguous_values.json'
         # self.delex_refs_path = 'data/multi-woz-processed/reference_no.json'
-        self.delex_sg_valdict_path = 'data/multi-woz-2.2-processed/delex_single_valdict.json'
-        self.delex_mt_valdict_path = 'data/multi-woz-2.2-processed/delex_multi_valdict.json'
-        self.ambiguous_val_path = 'data/multi-woz-2.2-processed/ambiguous_values.json'
-        self.delex_refs_path = 'data/multi-woz-2.2-processed/reference_no.json'
+        self.delex_sg_valdict_path = 'data/multi-woz-2.3-processed/delex_single_valdict.json'
+        self.delex_mt_valdict_path = 'data/multi-woz-2.3-processed/delex_multi_valdict.json'
+        self.ambiguous_val_path = 'data/multi-woz-2.3-processed/ambiguous_values.json'
+        self.delex_refs_path = 'data/multi-woz-2.3-processed/reference_no.json'
         self.delex_refs = json.loads(open(self.delex_refs_path, 'r').read())
         if not os.path.exists(self.delex_sg_valdict_path):
             self.delex_sg_valdict, self.delex_mt_valdict, self.ambiguous_vals = self.get_delex_valdict()
@@ -127,41 +128,13 @@ class DataPreprocessor(object):
 
         self.vocab = utils.Vocab(cfg.vocab_size)
 
-    def char2word(self, str, begin, end):
-        def findend(l,end):
-            for i in l:
-                if i>end:
-                    return i
-        def findbegin(l,begin):
-            for i in range(len(l)):
-                if l[i]>begin:
-                    return l[i-1]
-            return l[-1]
-        u = str.split(" ")
-        begin_list = []
-        end_list = []
-        for i in range(len(u)):
-            if i == 0:
-                begin_list.append(0)
-                end_list.append(len(u[0]))
-            else:
-                begin_list.append(1 + end_list[i - 1])
-                end_list.append(1 + end_list[i - 1] + len(u[i]))
-        #print(begin_list, end_list)
-        if begin_list.count(begin)>0 and end_list.count(end)>0:
-            return begin_list.index(begin), end_list.index(end)
-        elif begin_list.count(begin)>0 and end_list.count(end)==0:
-            return begin_list.index(begin), end_list.index(findend(end_list,end))
-        elif begin_list.count(begin) == 0 and end_list.count(end) > 0:
-            return begin_list.index(findbegin(begin_list,begin)), end_list.index(end)
-        else:
-            return begin_list.index(findbegin(begin_list,begin)), end_list.index(findend(end_list, end))
+
     def delex_by_annotation(self, dial_turn):
+        ## add by yyy in 13:48 0803
         u = dial_turn['text'].split()
         # u = my_clean_text(dial_turn['text']).split()
         ##
         span = dial_turn['span_info']
-       # span[0][3],span[0][4]= char2word(dial_turn['text'],span[0][3],span[0][4])
         for s in span:
             slot = s[1]
             if slot == 'open':
@@ -169,7 +142,7 @@ class DataPreprocessor(object):
             if ontology.da_abbr_to_slot_name.get(slot):
                 slot = ontology.da_abbr_to_slot_name[slot]
             for idx in range(s[3], s[4]+1):
-                #print(str(idx)+"总长度"+str(len(u)))
+               # print(str(idx)+"总长度"+str(len(u)))
                 u[idx] = ''
             try:
                 u[s[3]] = '[value_'+slot+']'
@@ -333,10 +306,6 @@ class DataPreprocessor(object):
                 # for user turn, have text
                 # sys turn: text, belief states(metadata), dialog_act, span_info
                 dial_state = dial_turn['metadata']
-                #print(dial_turn['text'])
-                if dial_turn['span_info']!=[]:
-                    for i in range(len(dial_turn['span_info'])):
-                        dial_turn['span_info'][i][3],dial_turn['span_info'][i][4]=self.char2word(dial_turn['text'], dial_turn['span_info'][i][3], dial_turn['span_info'][i][4])
                 dial_turn['text'] = ' '.join([t.text for t in self.nlp(dial_turn['text'])])
                 dial_turn["text"] = ' '.join(dial_turn["text"].replace(".", " . ").split())
                 if not dial_state:   # user
@@ -353,12 +322,11 @@ class DataPreprocessor(object):
                 else:   # system
                     # delexicalize system response, either by annotation or by val_dict
                     if 'span_info' in dial_turn and dial_turn['span_info']:
-                        #print(dial_turn['span_info'])
-                        #print(dial_turn['text'])
+                       # print(dial_turn['span_info'])
                         s_delex = clean_text(self.delex_by_annotation(dial_turn))
                     else:
                         #if not dial_turn['text']:
-                            #print(fn)
+                           # print(fn)
                         s_delex = self.delex_by_valdict(dial_turn['text'])
                     single_turn['resp'] = s_delex
                     single_turn['nodelx_resp'] = ' '.join(clean_text(dial_turn['text']).split())
@@ -369,10 +337,6 @@ class DataPreprocessor(object):
                             constraint_dict[domain] = OrderedDict()
                         info_sv = dial_state[domain]['semi']
                         for s,v in info_sv.items():
-                            if v==[]:
-                                v=""
-                            elif type(v)==list:
-                                v=v[0]
                             s,v = clean_slot_values(domain, s,v)
                             if len(v.split())>1:
                                 v = ' '.join([token.text for token in self.nlp(v)]).strip()
@@ -382,10 +346,6 @@ class DataPreprocessor(object):
                         for s,v in book_sv.items():
                             if s == 'booked':
                                 continue
-                            if v==[]:
-                                v=""
-                            elif type(v)==list:
-                                v=v[0]
                             s,v = clean_slot_values(domain, s,v)
                             if len(v.split())>1:
                                 v = ' '.join([token.text for token in self.nlp(v)]).strip()
@@ -519,14 +479,14 @@ class DataPreprocessor(object):
 
 
             data[fn] = dial
-            # print(dial)
+            # pprint(dial)
             # if count == 20:
             #     break
         self.vocab.construct()
-        self.vocab.save_vocab('data/multi-woz-2.2-processed/vocab')
-        with open('data/multi-woz-2.2-analysis/dialog_acts.json', 'w') as f:
+        self.vocab.save_vocab('data/multi-woz-2.3-processed/vocab')
+        with open('data/multi-woz-2.3-analysis/dialog_acts.json', 'w') as f:
             json.dump(ordered_sysact_dict, f, indent=2)
-        with open('data/multi-woz-2.2-analysis/dialog_act_type.json', 'w') as f:
+        with open('data/multi-woz-2.3-analysis/dialog_act_type.json', 'w') as f:
             json.dump(self.unique_da, f, indent=2)
         return data
 
@@ -541,13 +501,13 @@ if __name__=='__main__':
             'taxi': 'data/MultiWOZ_2.1/taxi_db.json',
             'train': 'data/MultiWOZ_2.1/train_db.json',
         }
-    if not os.path.exists('data/multi-woz-2.2-processed'):
-        os.mkdir('data/multi-woz-2.2-processed')
     get_db_values('data/MultiWOZ_2.1/value_set.json') #
     preprocess_db(db_paths)
+    if not os.path.exists('data/multi-woz-2.3-processed'):
+        os.mkdir('data/multi-woz-2.3-processed')
     dh = DataPreprocessor()
     data = dh.preprocess_main()
 
-    with open('data/multi-woz-2.2-processed/data_for_damd.json', 'w') as f:
+    with open('data/multi-woz-2.3-processed/data_for_damd.json', 'w') as f:
         json.dump(data, f, indent=2)
 
