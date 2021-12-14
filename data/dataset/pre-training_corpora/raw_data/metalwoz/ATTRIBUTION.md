@@ -1,0 +1,1 @@
+The ["MultiWOZ 2.0 dataset"](https://www.repository.cam.ac.uk/handle/1810/280608) by [Paweł Budzianowski](http://budzianowski.github.io/) and [Milica Gasic](https://www.cs.hhu.de/en/research-groups/dialog-systems-and-machine-learning/our-team/team/cv-gasic.html) is licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
